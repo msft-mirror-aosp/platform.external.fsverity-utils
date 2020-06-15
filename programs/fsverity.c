@@ -1,19 +1,14 @@
-// SPDX-License-Identifier: GPL-2.0+
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * fs-verity userspace tool
  *
- * Copyright (C) 2018 Google LLC
- *
- * Written by Eric Biggers.
+ * Copyright 2018 Google LLC
  */
 
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#include "fsverity.h"
 
-#include "commands.h"
-#include "hash_algs.h"
+#include <limits.h>
+#include <unistd.h>
 
 static const struct fsverity_command {
 	const char *name;
@@ -47,6 +42,17 @@ static const struct fsverity_command {
 	}
 };
 
+static void show_all_hash_algs(FILE *fp)
+{
+	u32 alg_num = 1;
+	const char *name;
+
+	fprintf(fp, "Available hash algorithms:");
+	while ((name = libfsverity_get_hash_name(alg_num++)) != NULL)
+		fprintf(fp, " %s", name);
+	putc('\n', fp);
+}
+
 static void usage_all(FILE *fp)
 {
 	int i;
@@ -59,10 +65,8 @@ static void usage_all(FILE *fp)
 "  Standard options:\n"
 "    fsverity --help\n"
 "    fsverity --version\n"
-"\n"
-"Available hash algorithms: ", fp);
+"\n", fp);
 	show_all_hash_algs(fp);
-	putc('\n', fp);
 }
 
 static void usage_cmd(const struct fsverity_command *cmd, FILE *fp)
@@ -78,20 +82,18 @@ void usage(const struct fsverity_command *cmd, FILE *fp)
 		usage_all(fp);
 }
 
-#define PACKAGE_VERSION    "v1.0"
-#define PACKAGE_BUGREPORT  "linux-fscrypt@vger.kernel.org"
-
 static void show_version(void)
 {
-	static const char * const str =
-"fsverity " PACKAGE_VERSION "\n"
-"Copyright (C) 2018 Google LLC\n"
+	printf(
+"fsverity v%d.%d\n"
+"Copyright 2018 Google LLC\n"
 "License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>.\n"
 "This is free software: you are free to change and redistribute it.\n"
 "There is NO WARRANTY, to the extent permitted by law.\n"
 "\n"
-"Report bugs to " PACKAGE_BUGREPORT ".\n";
-	fputs(str, stdout);
+"Report bugs to linux-fscrypt@vger.kernel.org.\n",
+		FSVERITY_UTILS_MAJOR_VERSION,
+		FSVERITY_UTILS_MINOR_VERSION);
 }
 
 static void handle_common_options(int argc, char *argv[],
@@ -125,6 +127,31 @@ static const struct fsverity_command *find_command(const char *name)
 		if (!strcmp(name, fsverity_commands[i].name))
 			return &fsverity_commands[i];
 	return NULL;
+}
+
+bool parse_hash_alg_option(const char *arg, u32 *alg_ptr)
+{
+	char *end;
+	unsigned long n = strtoul(arg, &end, 10);
+
+	if (*alg_ptr != 0) {
+		error_msg("--hash-alg can only be specified once");
+		return false;
+	}
+
+	/* Specified by number? */
+	if (n > 0 && n < INT32_MAX && *end == '\0') {
+		*alg_ptr = n;
+		return true;
+	}
+
+	/* Specified by name? */
+	*alg_ptr = libfsverity_find_hash_alg_by_name(arg);
+	if (*alg_ptr)
+		return true;
+	error_msg("unknown hash algorithm: '%s'", arg);
+	show_all_hash_algs(stderr);
+	return false;
 }
 
 bool parse_block_size_option(const char *arg, u32 *size_ptr)
@@ -176,6 +203,8 @@ u32 get_default_block_size(void)
 int main(int argc, char *argv[])
 {
 	const struct fsverity_command *cmd;
+
+	install_libfsverity_error_handler();
 
 	if (argc < 2) {
 		error_msg("no command specified");
