@@ -1,23 +1,18 @@
-// SPDX-License-Identifier: GPL-2.0+
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * Utility functions for the 'fsverity' program
  *
- * Copyright (C) 2018 Google LLC
- *
- * Written by Eric Biggers.
+ * Copyright 2018 Google LLC
  */
+
+#include "utils.h"
 
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#include "util.h"
 
 /* ========== Memory allocation ========== */
 
@@ -47,7 +42,7 @@ char *xstrdup(const char *s)
 
 /* ========== Error messages and assertions ========== */
 
-void do_error_msg(const char *format, va_list va, int err)
+static void do_error_msg(const char *format, va_list va, int err)
 {
 	fputs("ERROR: ", stderr);
 	vfprintf(stderr, format, va);
@@ -87,6 +82,16 @@ __noreturn void fatal_error(const char *format, ...)
 __noreturn void assertion_failed(const char *expr, const char *file, int line)
 {
 	fatal_error("Assertion failed: %s at %s:%d", expr, file, line);
+}
+
+static void print_libfsverity_error(const char *msg)
+{
+	error_msg("%s", msg);
+}
+
+void install_libfsverity_error_handler(void)
+{
+	libfsverity_set_error_callback(print_libfsverity_error);
 }
 
 /* ========== File utilities ========== */
@@ -181,16 +186,18 @@ static int hex2bin_char(char c)
 
 bool hex2bin(const char *hex, u8 *bin, size_t bin_len)
 {
+	size_t i;
+
 	if (strlen(hex) != 2 * bin_len)
 		return false;
 
-	while (bin_len--) {
+	for (i = 0; i < bin_len; i++) {
 		int hi = hex2bin_char(*hex++);
 		int lo = hex2bin_char(*hex++);
 
 		if (hi < 0 || lo < 0)
 			return false;
-		*bin++ = (hi << 4) | lo;
+		bin[i] = (hi << 4) | lo;
 	}
 	return true;
 }
@@ -206,10 +213,11 @@ static char bin2hex_char(u8 nibble)
 
 void bin2hex(const u8 *bin, size_t bin_len, char *hex)
 {
-	while (bin_len--) {
-		*hex++ = bin2hex_char(*bin >> 4);
-		*hex++ = bin2hex_char(*bin & 0xf);
-		bin++;
+	size_t i;
+
+	for (i = 0; i < bin_len; i++) {
+		*hex++ = bin2hex_char(bin[i] >> 4);
+		*hex++ = bin2hex_char(bin[i] & 0xf);
 	}
 	*hex = '\0';
 }
