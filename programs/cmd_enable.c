@@ -1,48 +1,16 @@
-// SPDX-License-Identifier: GPL-2.0+
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * The 'fsverity enable' command
  *
- * Copyright (C) 2018 Google LLC
- *
- * Written by Eric Biggers.
+ * Copyright 2018 Google LLC
  */
+
+#include "fsverity.h"
 
 #include <fcntl.h>
 #include <getopt.h>
 #include <limits.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/ioctl.h>
-
-#include "commands.h"
-#include "fsverity_uapi.h"
-#include "hash_algs.h"
-
-static bool parse_hash_alg_option(const char *arg, u32 *alg_ptr)
-{
-	char *end;
-	unsigned long n = strtoul(arg, &end, 10);
-	const struct fsverity_hash_alg *alg;
-
-	if (*alg_ptr != 0) {
-		error_msg("--hash-alg can only be specified once");
-		return false;
-	}
-
-	/* Specified by number? */
-	if (n > 0 && n < INT32_MAX && *end == '\0') {
-		*alg_ptr = n;
-		return true;
-	}
-
-	/* Specified by name? */
-	alg = find_hash_alg_by_name(arg);
-	if (alg != NULL) {
-		*alg_ptr = alg - fsverity_hash_algs;
-		return true;
-	}
-	return false;
-}
 
 static bool read_signature(const char *filename, u8 **sig_ret,
 			   u32 *sig_size_ret)
