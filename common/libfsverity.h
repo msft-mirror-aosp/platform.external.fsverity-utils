@@ -1,9 +1,13 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* SPDX-License-Identifier: MIT */
 /*
  * libfsverity API
  *
  * Copyright 2018 Google LLC
  * Copyright (C) 2020 Facebook
+ *
+ * Use of this source code is governed by an MIT-style
+ * license that can be found in the LICENSE file or at
+ * https://opensource.org/licenses/MIT.
  */
 
 #ifndef LIBFSVERITY_H
@@ -18,7 +22,7 @@ extern "C" {
 #include <stdint.h>
 
 #define FSVERITY_UTILS_MAJOR_VERSION	1
-#define FSVERITY_UTILS_MINOR_VERSION	1
+#define FSVERITY_UTILS_MINOR_VERSION	2
 
 #define FS_VERITY_HASH_ALG_SHA256       1
 #define FS_VERITY_HASH_ALG_SHA512       2
