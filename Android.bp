@@ -7,5 +7,10 @@ cc_binary {
         "-Wno-pointer-arith",
         "-D_FILE_OFFSET_BITS=64"
     ],
-    srcs: ["*.c"],
+    srcs: [
+        "lib/*.c",
+        "programs/cmd_*.c",
+        "programs/fsverity.c",
+        "programs/utils.c",
+    ],
 }
