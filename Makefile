@@ -1,6 +1,11 @@
-# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-License-Identifier: MIT
 # Copyright 2020 Google LLC
 #
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
+
 # Use 'make help' to list available targets.
 #
 # Define V=1 to enable "verbose" mode, showing all executed commands.
@@ -27,7 +32,7 @@
 #
 ##############################################################################
 
-cc-option = $(shell if $(CC) $(1) -c -x c /dev/null -o /dev/null &>/dev/null; \
+cc-option = $(shell if $(CC) $(1) -c -x c /dev/null -o /dev/null > /dev/null 2>&1; \
 	      then echo $(1); fi)
 
 CFLAGS ?= -O2 -Wall -Wundef					\
