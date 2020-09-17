@@ -1,15 +1,15 @@
 name: "fsverity-utils"
-description: "This is `fsverity`, a userspace utility for fs-verity.  fs-verity is a Linux kernel feature that does transparent on-demand integrity/authenticity verification of the contents of read-only files, using a Merkle tree (hash tree) hidden after the end of the file.  The mechanism is similar to dm-verity, but implemented at the file level rather than at the block device level.  The `fsverity` utility allows you to set up fs-verity protected files."
+description: "This is fsverity-utils, a set of userspace utilities for fs-verity.  fs-verity is a Linux kernel feature that does transparent on-demand integrity/authenticity verification of the contents of read-only files, using a hidden Merkle tree (hash tree) associated with the file.  fsverity-utils currently contains just one program, `fsverity`.  The `fsverity` program allows you to set up fs-verity protected files."
 third_party {
   url {
     type: GIT
     value: "https://git.kernel.org/pub/scm/linux/kernel/git/ebiggers/fsverity-utils.git"
   }
-  version: "v1.1"
-  license_type: RESTRICTED
+  version: "v1.2"
+  license_type: NOTICE
   last_upgrade_date {
     year: 2020
-    month: 6
-    day: 15
+    month: 8
+    day: 17
   }
 }
