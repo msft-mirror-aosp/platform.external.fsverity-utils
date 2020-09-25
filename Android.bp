@@ -7,6 +7,7 @@ cc_binary {
         "-Wno-pointer-arith",
         "-D_FILE_OFFSET_BITS=64"
     ],
+    local_include_dirs: ["include"],
     srcs: [
         "lib/*.c",
         "programs/cmd_*.c",
