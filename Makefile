@@ -1,6 +1,11 @@
-# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-License-Identifier: MIT
 # Copyright 2020 Google LLC
 #
+# Use of this source code is governed by an MIT-style
+# license that can be found in the LICENSE file or at
+# https://opensource.org/licenses/MIT.
+
+
 # Use 'make help' to list available targets.
 #
 # Define V=1 to enable "verbose" mode, showing all executed commands.
@@ -27,7 +32,7 @@
 #
 ##############################################################################
 
-cc-option = $(shell if $(CC) $(1) -c -x c /dev/null -o /dev/null &>/dev/null; \
+cc-option = $(shell if $(CC) $(1) -c -x c /dev/null -o /dev/null > /dev/null 2>&1; \
 	      then echo $(1); fi)
 
 CFLAGS ?= -O2 -Wall -Wundef					\
@@ -39,7 +44,7 @@ CFLAGS ?= -O2 -Wall -Wundef					\
 	$(call cc-option,-Wunused-parameter)			\
 	$(call cc-option,-Wvla)
 
-override CPPFLAGS := -D_FILE_OFFSET_BITS=64 $(CPPFLAGS)
+override CPPFLAGS := -Iinclude -D_FILE_OFFSET_BITS=64 $(CPPFLAGS)
 
 ifneq ($(V),1)
 QUIET_CC        = @echo '  CC      ' $@;
@@ -177,7 +182,7 @@ install:all
 	install -m644 libfsverity.a $(DESTDIR)$(LIBDIR)
 	install -m755 libfsverity.so.$(SOVERSION) $(DESTDIR)$(LIBDIR)
 	ln -sf libfsverity.so.$(SOVERSION) $(DESTDIR)$(LIBDIR)/libfsverity.so
-	install -m644 common/libfsverity.h $(DESTDIR)$(INCDIR)
+	install -m644 include/libfsverity.h $(DESTDIR)$(INCDIR)
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/fsverity

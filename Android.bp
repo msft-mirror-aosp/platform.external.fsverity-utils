@@ -1,16 +1,38 @@
-cc_binary {
-    name: "fsverity",
-    host_supported: true,
-    shared_libs: ["libcrypto"],
+cc_defaults {
+    name: "fsverity_default_flags",
+
     cflags: [
         "-Wall",
         "-Wno-pointer-arith",
         "-D_FILE_OFFSET_BITS=64"
     ],
+}
+
+cc_binary {
+    name: "fsverity",
+    defaults: [
+        "fsverity_default_flags",
+    ],
+    host_supported: true,
+    shared_libs: ["libfsverity"],
     srcs: [
-        "lib/*.c",
         "programs/cmd_*.c",
         "programs/fsverity.c",
         "programs/utils.c",
+    ],
+}
+
+cc_library {
+    name: "libfsverity",
+    defaults: [
+        "fsverity_default_flags",
+    ],
+    host_supported: true,
+    shared_libs: ["libcrypto"],
+
+    export_include_dirs: ["include"],
+
+    srcs: [
+        "lib/*.c",
     ],
 }
