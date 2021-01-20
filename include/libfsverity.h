@@ -22,20 +22,47 @@ extern "C" {
 #include <stdint.h>
 
 #define FSVERITY_UTILS_MAJOR_VERSION	1
-#define FSVERITY_UTILS_MINOR_VERSION	2
+#define FSVERITY_UTILS_MINOR_VERSION	3
 
 #define FS_VERITY_HASH_ALG_SHA256       1
 #define FS_VERITY_HASH_ALG_SHA512       2
 
+/**
+ * struct libfsverity_merkle_tree_params - properties of a file's Merkle tree
+ *
+ * Zero this, then fill in at least @version and @file_size.
+ */
 struct libfsverity_merkle_tree_params {
-	uint32_t version;		/* must be 1			*/
-	uint32_t hash_algorithm;	/* one of FS_VERITY_HASH_ALG_*	*/
-	uint64_t file_size;		/* file size in bytes		*/
-	uint32_t block_size;		/* Merkle tree block size in bytes */
-	uint32_t salt_size;		/* salt size in bytes (0 if unsalted) */
-	const uint8_t *salt;		/* pointer to salt (optional)	*/
-	uint64_t reserved1[8];		/* must be 0 */
-	uintptr_t reserved2[8];		/* must be 0 */
+
+	/** @version: must be 1 */
+	uint32_t version;
+
+	/**
+	 * @hash_algorithm: one of FS_VERITY_HASH_ALG_*, or 0 to use the default
+	 * of FS_VERITY_HASH_ALG_SHA256
+	 */
+	uint32_t hash_algorithm;
+
+	/** @file_size: the file size in bytes */
+	uint64_t file_size;
+
+	/**
+	 * @block_size: the Merkle tree block size in bytes, or 0 to use the
+	 * default of 4096 bytes
+	 */
+	uint32_t block_size;
+
+	/** @salt_size: the salt size in bytes, or 0 if unsalted */
+	uint32_t salt_size;
+
+	/** @salt: pointer to the salt, or NULL if unsalted */
+	const uint8_t *salt;
+
+	/** @reserved1: must be 0 */
+	uint64_t reserved1[8];
+
+	/** @reserved2: must be 0 */
+	uintptr_t reserved2[8];
 };
 
 struct libfsverity_digest {
@@ -64,14 +91,12 @@ typedef int (*libfsverity_read_fn_t)(void *fd, void *buf, size_t count);
 
 /**
  * libfsverity_compute_digest() - Compute digest of a file
- *          An fsverity_digest (also called a "file measurement") is the root of
- *          a file's Merkle tree.  Not to be confused with a traditional file
- *          digest computed over the entire file.
+ *          A fs-verity file digest is the hash of a file's fsverity_descriptor.
+ *          Not to be confused with a traditional file digest computed over the
+ *          entire file, or with the bare fsverity_descriptor::root_hash.
  * @fd: context that will be passed to @read_fn
  * @read_fn: a function that will read the data of the file
- * @params: struct libfsverity_merkle_tree_params specifying the fs-verity
- *	    version, the hash algorithm, the file size, the block size, and
- *	    optionally a salt.  Reserved fields must be zero.
+ * @params: Pointer to the Merkle tree parameters
  * @digest_ret: Pointer to pointer for computed digest.
  *
  * Returns:
@@ -87,12 +112,12 @@ libfsverity_compute_digest(void *fd, libfsverity_read_fn_t read_fn,
 
 /**
  * libfsverity_sign_digest() - Sign previously computed digest of a file
- *          This signature is used by the file system to validate the
- *          signed file measurement against a public key loaded into the
- *          .fs-verity kernel keyring, when CONFIG_FS_VERITY_BUILTIN_SIGNATURES
- *          is enabled. The signature is formatted as PKCS#7 stored in DER
- *          format. See Documentation/filesystems/fsverity.rst in the kernel
- *          source tree for further details.
+ *          This signature is used by the filesystem to validate the signed file
+ *          digest against a public key loaded into the .fs-verity kernel
+ *          keyring, when CONFIG_FS_VERITY_BUILTIN_SIGNATURES is enabled. The
+ *          signature is formatted as PKCS#7 stored in DER format. See
+ *          Documentation/filesystems/fsverity.rst in the kernel source tree for
+ *          further details.
  * @digest: pointer to previously computed digest
  * @sig_params: struct libfsverity_signature_params providing filenames of
  *          the keyfile and certificate file. Reserved fields must be zero.
@@ -111,6 +136,42 @@ int
 libfsverity_sign_digest(const struct libfsverity_digest *digest,
 			const struct libfsverity_signature_params *sig_params,
 			uint8_t **sig_ret, size_t *sig_size_ret);
+
+/**
+ * libfsverity_enable() - Enable fs-verity on a file
+ * @fd: read-only file descriptor to the file
+ * @params: pointer to the Merkle tree parameters
+ *
+ * This is a simple wrapper around the FS_IOC_ENABLE_VERITY ioctl.
+ *
+ * Return: 0 on success, -EINVAL for invalid arguments, or a negative errno
+ *	   value from the FS_IOC_ENABLE_VERITY ioctl.  See
+ *	   Documentation/filesystems/fsverity.rst in the kernel source tree for
+ *	   the possible error codes from FS_IOC_ENABLE_VERITY.
+ */
+int
+libfsverity_enable(int fd, const struct libfsverity_merkle_tree_params *params);
+
+/**
+ * libfsverity_enable_with_sig() - Enable fs-verity on a file, with a signature
+ * @fd: read-only file descriptor to the file
+ * @params: pointer to the Merkle tree parameters
+ * @sig: pointer to the file's signature
+ * @sig_size: size of the file's signature in bytes
+ *
+ * Like libfsverity_enable(), but allows specifying a built-in signature (i.e. a
+ * singature created with libfsverity_sign_digest()) to associate with the file.
+ * This is only needed if the in-kernel signature verification support is being
+ * used; it is not needed if signatures are being verified in userspace.
+ *
+ * If @sig is NULL and @sig_size is 0, this is the same as libfsverity_enable().
+ *
+ * Return: See libfsverity_enable().
+ */
+int
+libfsverity_enable_with_sig(int fd,
+			    const struct libfsverity_merkle_tree_params *params,
+			    const uint8_t *sig, size_t sig_size);
 
 /**
  * libfsverity_find_hash_alg_by_name() - Find hash algorithm by name
