@@ -18,9 +18,9 @@ might add support for fs-verity in the future.
 
 fsverity-utils currently contains just one program, `fsverity`.  The
 `fsverity` program allows you to set up fs-verity protected files.
-In addition, the file measurement computation and signing
-functionality of `fsverity` is optionally exposed through a C library
-`libfsverity`.  See `libfsverity.h` for the API of this library.
+In addition, the file digest computation and signing functionality of
+`fsverity` is optionally exposed through a C library `libfsverity`.
+See `libfsverity.h` for the API of this library.
 
 ## Building and installing
 
@@ -50,6 +50,17 @@ use `make USE_SHARED_LIB=1` to use dynamic linking instead.
 
 See the `Makefile` for other supported build and installation options.
 
+### Building on Windows
+
+There is minimal support for building Windows executables using MinGW.
+```bash
+    make CC=x86_64-w64-mingw32-gcc
+```
+
+`fsverity.exe` will be built, and it supports the `digest` and `sign` commands.
+
+A Windows build of OpenSSL/libcrypto needs to be available.
+
 ## Examples
 
 ### Basic use
@@ -66,13 +77,13 @@ See the `Makefile` for other supported build and installation options.
     # Enable verity on the file
     fsverity enable file
 
-    # Show the verity file measurement
+    # Show the verity file digest
     fsverity measure file
 
     # File should still be readable as usual.  However, all data read
     # is now transparently checked against a hidden Merkle tree, whose
-    # root hash is incorporated into the verity file measurement.
-    # Reads of any corrupted parts of the data will fail.
+    # root hash is incorporated into the verity file digest.  Reads of
+    # any corrupted parts of the data will fail.
     sha256sum file
 ```
 
@@ -84,10 +95,10 @@ against a trusted value.
 ### Using builtin signatures
 
 With `CONFIG_FS_VERITY_BUILTIN_SIGNATURES=y`, the filesystem supports
-automatically verifying a signed file measurement that has been
-included in the verity metadata.  The signature is verified against
-the set of X.509 certificates that have been loaded into the
-".fs-verity" kernel keyring.  Here's an example:
+automatically verifying a signed file digest that has been included in
+the verity metadata.  The signature is verified against the set of
+X.509 certificates that have been loaded into the ".fs-verity" kernel
+keyring.  Here's an example:
 
 ```bash
     # Generate a new certificate and private key:
@@ -112,6 +123,10 @@ the set of X.509 certificates that have been loaded into the
     fsverity enable file --signature=file.sig
     rm -f file.sig
     sha256sum file
+
+    # The digest to be signed can also be printed separately, hex
+    # encoded, in case the integrated signing cannot be used:
+    fsverity digest file --compact --for-builtin-sig | tr -d '\n' | xxd -p -r | openssl smime -sign -in /dev/stdin ...
 ```
 
 By default, it's not required that verity files have a signature.
