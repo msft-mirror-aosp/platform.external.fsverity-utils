@@ -12,7 +12,6 @@
 #include "fsverity.h"
 
 #include <limits.h>
-#include <unistd.h>
 
 static const struct fsverity_command {
 	const char *name;
@@ -21,6 +20,16 @@ static const struct fsverity_command {
 	const char *usage_str;
 } fsverity_commands[] = {
 	{
+		.name = "digest",
+		.func = fsverity_cmd_digest,
+		.short_desc =
+"Compute the fs-verity digest of the given file(s), for offline signing",
+		.usage_str =
+"    fsverity digest FILE...\n"
+"               [--hash-alg=HASH_ALG] [--block-size=BLOCK_SIZE] [--salt=SALT]\n"
+"               [--compact] [--for-builtin-sig]\n"
+#ifndef _WIN32
+	}, {
 		.name = "enable",
 		.func = fsverity_cmd_enable,
 		.short_desc = "Enable fs-verity on a file",
@@ -32,9 +41,10 @@ static const struct fsverity_command {
 		.name = "measure",
 		.func = fsverity_cmd_measure,
 		.short_desc =
-"Display the measurement of the given verity file(s)",
+"Display the fs-verity digest of the given verity file(s)",
 		.usage_str =
 "    fsverity measure FILE...\n"
+#endif /* !_WIN32 */
 	}, {
 		.name = "sign",
 		.func = fsverity_cmd_sign,
@@ -125,7 +135,7 @@ static const struct fsverity_command *find_command(const char *name)
 	return NULL;
 }
 
-bool parse_hash_alg_option(const char *arg, u32 *alg_ptr)
+static bool parse_hash_alg_option(const char *arg, u32 *alg_ptr)
 {
 	char *end;
 	unsigned long n = strtoul(arg, &end, 10);
@@ -150,7 +160,7 @@ bool parse_hash_alg_option(const char *arg, u32 *alg_ptr)
 	return false;
 }
 
-bool parse_block_size_option(const char *arg, u32 *size_ptr)
+static bool parse_block_size_option(const char *arg, u32 *size_ptr)
 {
 	char *end;
 	unsigned long n = strtoul(arg, &end, 10);
@@ -168,7 +178,8 @@ bool parse_block_size_option(const char *arg, u32 *size_ptr)
 	return true;
 }
 
-bool parse_salt_option(const char *arg, u8 **salt_ptr, u32 *salt_size_ptr)
+static bool parse_salt_option(const char *arg, u8 **salt_ptr,
+			      u32 *salt_size_ptr)
 {
 	if (*salt_ptr != NULL) {
 		error_msg("--salt can only be specified once");
@@ -183,17 +194,26 @@ bool parse_salt_option(const char *arg, u8 **salt_ptr, u32 *salt_size_ptr)
 	return true;
 }
 
-u32 get_default_block_size(void)
+bool parse_tree_param(int opt_char, const char *arg,
+		      struct libfsverity_merkle_tree_params *params)
 {
-	long n = sysconf(_SC_PAGESIZE);
-
-	if (n <= 0 || n >= INT_MAX || !is_power_of_2(n)) {
-		fprintf(stderr,
-			"Warning: invalid _SC_PAGESIZE (%ld).  Assuming 4K blocks.\n",
-			n);
-		return 4096;
+	switch (opt_char) {
+	case OPT_HASH_ALG:
+		return parse_hash_alg_option(arg, &params->hash_algorithm);
+	case OPT_BLOCK_SIZE:
+		return parse_block_size_option(arg, &params->block_size);
+	case OPT_SALT:
+		return parse_salt_option(arg, (u8 **)&params->salt,
+					 &params->salt_size);
+	default:
+		ASSERT(0);
 	}
-	return n;
+}
+
+void destroy_tree_params(struct libfsverity_merkle_tree_params *params)
+{
+	free((u8 *)params->salt);
+	memset(params, 0, sizeof(*params));
 }
 
 int main(int argc, char *argv[])
