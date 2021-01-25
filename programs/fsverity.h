@@ -14,16 +14,28 @@
 #include "utils.h"
 #include "../common/fsverity_uapi.h"
 
-/* The hash algorithm that 'fsverity' assumes when none is specified */
-#define FS_VERITY_HASH_ALG_DEFAULT	FS_VERITY_HASH_ALG_SHA256
-
 /*
  * Largest digest size among all hash algorithms supported by fs-verity.
  * This can be increased if needed.
  */
 #define FS_VERITY_MAX_DIGEST_SIZE	64
 
+enum {
+	OPT_BLOCK_SIZE,
+	OPT_CERT,
+	OPT_COMPACT,
+	OPT_FOR_BUILTIN_SIG,
+	OPT_HASH_ALG,
+	OPT_KEY,
+	OPT_SALT,
+	OPT_SIGNATURE,
+};
+
 struct fsverity_command;
+
+/* cmd_digest.c */
+int fsverity_cmd_digest(const struct fsverity_command *cmd,
+			int argc, char *argv[]);
 
 /* cmd_enable.c */
 int fsverity_cmd_enable(const struct fsverity_command *cmd,
@@ -39,9 +51,8 @@ int fsverity_cmd_sign(const struct fsverity_command *cmd,
 
 /* fsverity.c */
 void usage(const struct fsverity_command *cmd, FILE *fp);
-bool parse_hash_alg_option(const char *arg, u32 *alg_ptr);
-bool parse_block_size_option(const char *arg, u32 *size_ptr);
-bool parse_salt_option(const char *arg, u8 **salt_ptr, u32 *salt_size_ptr);
-u32 get_default_block_size(void);
+bool parse_tree_param(int opt_char, const char *arg,
+		      struct libfsverity_merkle_tree_params *params);
+void destroy_tree_params(struct libfsverity_merkle_tree_params *params);
 
 #endif /* PROGRAMS_FSVERITY_H */
