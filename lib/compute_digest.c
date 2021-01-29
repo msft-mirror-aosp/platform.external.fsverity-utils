@@ -17,23 +17,6 @@
 
 #define FS_VERITY_MAX_LEVELS	64
 
-/*
- * Merkle tree properties.  The file measurement is the hash of this structure
- * excluding the signature and with the sig_size field set to 0.
- */
-struct fsverity_descriptor {
-	__u8 version;		/* must be 1 */
-	__u8 hash_algorithm;	/* Merkle tree hash algorithm */
-	__u8 log_blocksize;	/* log2 of size of data and tree blocks */
-	__u8 salt_size;		/* size of salt in bytes; 0 if none */
-	__le32 sig_size;	/* size of signature in bytes; 0 if none */
-	__le64 data_size;	/* size of file the Merkle tree is built over */
-	__u8 root_hash[64];	/* Merkle tree root hash */
-	__u8 salt[32];		/* salt prepended to each hashed block */
-	__u8 __reserved[144];	/* must be 0's */
-	__u8 signature[];	/* optional PKCS#7 signature */
-};
-
 struct block_buffer {
 	u32 filled;
 	u8 *data;
@@ -164,6 +147,8 @@ libfsverity_compute_digest(void *fd, libfsverity_read_fn_t read_fn,
 			   const struct libfsverity_merkle_tree_params *params,
 			   struct libfsverity_digest **digest_ret)
 {
+	u32 alg_num;
+	u32 block_size;
 	const struct fsverity_hash_alg *hash_alg;
 	struct hash_ctx *hash = NULL;
 	struct libfsverity_digest *digest;
@@ -179,9 +164,13 @@ libfsverity_compute_digest(void *fd, libfsverity_read_fn_t read_fn,
 				      params->version);
 		return -EINVAL;
 	}
-	if (!is_power_of_2(params->block_size)) {
+
+	alg_num = params->hash_algorithm ?: FS_VERITY_HASH_ALG_DEFAULT;
+	block_size = params->block_size ?: FS_VERITY_BLOCK_SIZE_DEFAULT;
+
+	if (!is_power_of_2(block_size)) {
 		libfsverity_error_msg("unsupported block size (%u)",
-				      params->block_size);
+				      block_size);
 		return -EINVAL;
 	}
 	if (params->salt_size > sizeof(desc.salt)) {
@@ -201,16 +190,15 @@ libfsverity_compute_digest(void *fd, libfsverity_read_fn_t read_fn,
 		return -EINVAL;
 	}
 
-	hash_alg = libfsverity_find_hash_alg_by_num(params->hash_algorithm);
+	hash_alg = libfsverity_find_hash_alg_by_num(alg_num);
 	if (!hash_alg) {
-		libfsverity_error_msg("unknown hash algorithm: %u",
-				      params->hash_algorithm);
+		libfsverity_error_msg("unknown hash algorithm: %u", alg_num);
 		return -EINVAL;
 	}
 
-	if (params->block_size < 2 * hash_alg->digest_size) {
+	if (block_size < 2 * hash_alg->digest_size) {
 		libfsverity_error_msg("block size (%u) too small for hash algorithm %s",
-				      params->block_size, hash_alg->name);
+				      block_size, hash_alg->name);
 		return -EINVAL;
 	}
 
@@ -220,8 +208,8 @@ libfsverity_compute_digest(void *fd, libfsverity_read_fn_t read_fn,
 
 	memset(&desc, 0, sizeof(desc));
 	desc.version = 1;
-	desc.hash_algorithm = params->hash_algorithm;
-	desc.log_blocksize = ilog2(params->block_size);
+	desc.hash_algorithm = alg_num;
+	desc.log_blocksize = ilog2(block_size);
 	desc.data_size = cpu_to_le64(params->file_size);
 	if (params->salt_size != 0) {
 		memcpy(desc.salt, params->salt, params->salt_size);
@@ -229,7 +217,7 @@ libfsverity_compute_digest(void *fd, libfsverity_read_fn_t read_fn,
 	}
 
 	err = compute_root_hash(fd, read_fn, params->file_size, hash,
-				params->block_size, params->salt,
+				block_size, params->salt,
 				params->salt_size, desc.root_hash);
 	if (err)
 		goto out;
@@ -239,7 +227,7 @@ libfsverity_compute_digest(void *fd, libfsverity_read_fn_t read_fn,
 		err = -ENOMEM;
 		goto out;
 	}
-	digest->digest_algorithm = params->hash_algorithm;
+	digest->digest_algorithm = alg_num;
 	digest->digest_size = hash_alg->digest_size;
 	libfsverity_hash_full(hash, &desc, sizeof(desc), digest->digest);
 	*digest_ret = digest;
