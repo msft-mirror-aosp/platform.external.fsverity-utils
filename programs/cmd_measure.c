@@ -1,28 +1,26 @@
-// SPDX-License-Identifier: GPL-2.0+
+// SPDX-License-Identifier: MIT
 /*
  * The 'fsverity measure' command
  *
- * Copyright (C) 2018 Google LLC
+ * Copyright 2018 Google LLC
  *
- * Written by Eric Biggers.
+ * Use of this source code is governed by an MIT-style
+ * license that can be found in the LICENSE file or at
+ * https://opensource.org/licenses/MIT.
  */
 
+#include "fsverity.h"
+
 #include <fcntl.h>
-#include <stdlib.h>
 #include <sys/ioctl.h>
 
-#include "commands.h"
-#include "fsverity_uapi.h"
-#include "hash_algs.h"
-
-/* Display the measurement of the given verity file(s). */
+/* Display the fs-verity digest of the given verity file(s). */
 int fsverity_cmd_measure(const struct fsverity_command *cmd,
 			 int argc, char *argv[])
 {
 	struct fsverity_digest *d = NULL;
 	struct filedes file;
 	char digest_hex[FS_VERITY_MAX_DIGEST_SIZE * 2 + 1];
-	const struct fsverity_hash_alg *hash_alg;
 	char _hash_alg_name[32];
 	const char *hash_alg_name;
 	int status;
@@ -48,10 +46,8 @@ int fsverity_cmd_measure(const struct fsverity_command *cmd,
 
 		ASSERT(d->digest_size <= FS_VERITY_MAX_DIGEST_SIZE);
 		bin2hex(d->digest, d->digest_size, digest_hex);
-		hash_alg = find_hash_alg_by_num(d->digest_algorithm);
-		if (hash_alg) {
-			hash_alg_name = hash_alg->name;
-		} else {
+		hash_alg_name = libfsverity_get_hash_name(d->digest_algorithm);
+		if (!hash_alg_name) {
 			sprintf(_hash_alg_name, "ALG_%u", d->digest_algorithm);
 			hash_alg_name = _hash_alg_name;
 		}

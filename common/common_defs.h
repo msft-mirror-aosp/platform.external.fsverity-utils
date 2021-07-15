@@ -1,16 +1,21 @@
-/* SPDX-License-Identifier: GPL-2.0+ */
+/* SPDX-License-Identifier: MIT */
 /*
- * Utility functions and macros for the 'fsverity' program
+ * Common definitions for libfsverity and the 'fsverity' program
  *
- * Copyright (C) 2018 Google LLC
+ * Copyright 2018 Google LLC
+ *
+ * Use of this source code is governed by an MIT-style
+ * license that can be found in the LICENSE file or at
+ * https://opensource.org/licenses/MIT.
  */
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef COMMON_COMMON_DEFS_H
+#define COMMON_COMMON_DEFS_H
 
-#include <inttypes.h>
-#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
+
+#include "win32_defs.h"
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -43,6 +48,7 @@ typedef uint64_t u64;
 	__typeof__(b) _b = (b);		\
 	_a < _b ? _a : _b;		\
 })
+
 #define max(a, b) ({			\
 	__typeof__(a) _a = (a);		\
 	__typeof__(b) _b = (b);		\
@@ -86,40 +92,4 @@ static inline int ilog2(unsigned long n)
 #  define le64_to_cpu(v)	(__builtin_bswap64((__force u64)(v)))
 #endif
 
-/* ========== Memory allocation ========== */
-
-void *xmalloc(size_t size);
-void *xzalloc(size_t size);
-void *xmemdup(const void *mem, size_t size);
-char *xstrdup(const char *s);
-
-/* ========== Error messages and assertions ========== */
-
-__cold void do_error_msg(const char *format, va_list va, int err);
-__printf(1, 2) __cold void error_msg(const char *format, ...);
-__printf(1, 2) __cold void error_msg_errno(const char *format, ...);
-__printf(1, 2) __cold __noreturn void fatal_error(const char *format, ...);
-__cold __noreturn void assertion_failed(const char *expr,
-					const char *file, int line);
-
-#define ASSERT(e) ({ if (!(e)) assertion_failed(#e, __FILE__, __LINE__); })
-
-/* ========== File utilities ========== */
-
-struct filedes {
-	int fd;
-	char *name;		/* filename, for logging or error messages */
-};
-
-bool open_file(struct filedes *file, const char *filename, int flags, int mode);
-bool get_file_size(struct filedes *file, u64 *size_ret);
-bool full_read(struct filedes *file, void *buf, size_t count);
-bool full_write(struct filedes *file, const void *buf, size_t count);
-bool filedes_close(struct filedes *file);
-
-/* ========== String utilities ========== */
-
-bool hex2bin(const char *hex, u8 *bin, size_t bin_len);
-void bin2hex(const u8 *bin, size_t bin_len, char *hex);
-
-#endif /* UTIL_H */
+#endif /* COMMON_COMMON_DEFS_H */
