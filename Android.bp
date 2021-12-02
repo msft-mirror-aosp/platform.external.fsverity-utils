@@ -67,6 +67,7 @@ cc_library {
         "//apex_available:platform",
         "com.android.compos",
     ],
+    recovery_available: true,
 
     srcs: [
         "lib/*.c",
