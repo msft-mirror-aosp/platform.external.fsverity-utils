@@ -163,6 +163,15 @@ BSSL=$HOME/src/boringssl
 $MAKE CFLAGS="-O2 -Werror" LDFLAGS="-L$BSSL/build/crypto" \
 	CPPFLAGS="-I$BSSL/include" LDLIBS="-lcrypto -lpthread" check
 
+log "Build and test using OpenSSL 1.0"
+$MAKE CFLAGS="-O2 -Werror" LDFLAGS="-L/usr/lib/openssl-1.0" \
+	CPPFLAGS="-I/usr/include/openssl-1.0" check
+
+log "Build and test using OpenSSL 3.0"
+OSSL3=$HOME/src/openssl/inst/usr/local
+LD_LIBRARY_PATH="$OSSL3/lib64" $MAKE CFLAGS="-O2 -Werror" \
+	LDFLAGS="-L$OSSL3/lib64" CPPFLAGS="-I$OSSL3/include" check
+
 log "Build and test using -funsigned-char"
 $MAKE CFLAGS="-O2 -Werror -funsigned-char" check
 
