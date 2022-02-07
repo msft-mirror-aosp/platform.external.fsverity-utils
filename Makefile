@@ -46,7 +46,7 @@ endif
 
 # Set the CFLAGS.  First give the warning-related flags (unconditionally, though
 # the user can override any of them by specifying the opposite flag); then give
-# the user-specifed CFLAGS, defaulting to -O2 if none were specified.
+# the user-specified CFLAGS, defaulting to -O2 if none were specified.
 #
 # Use -Wno-deprecated-declarations to avoid warnings about the Engine API having
 # been deprecated in OpenSSL 3.0; the replacement isn't ready yet.
@@ -210,6 +210,21 @@ man/fsverity.1:man/fsverity.1.md
 
 MAN_PAGES := man/fsverity.1
 EXTRA_TARGETS += $(MAN_PAGES)
+
+##############################################################################
+
+# Support for downloading and building BoringSSL.  The purpose of this is to
+# allow testing builds of fsverity-utils that link to BoringSSL instead of
+# OpenSSL, without having to use a system that uses BoringSSL natively.
+
+boringssl:
+	rm -rf boringssl boringssl.tar.gz
+	curl -s -o boringssl.tar.gz \
+		https://boringssl.googlesource.com/boringssl/+archive/refs/heads/master.tar.gz
+	mkdir boringssl
+	tar xf boringssl.tar.gz -C boringssl
+	cmake -B boringssl/build boringssl
+	$(MAKE) -C boringssl/build $(MAKEFLAGS)
 
 ##############################################################################
 
