@@ -1,6 +1,6 @@
-% FSVERITY(1) fsverity-utils v1.4 | User Commands
+% FSVERITY(1) fsverity-utils v1.5 | User Commands
 %
-% June 2021
+% February 2022
 
 # NAME
 
@@ -160,6 +160,10 @@ a key file, provide **\-\-key** and optionally **\-\-cert**.  To use a PKCS#11
 token, provide **\-\-pkcs11-engine**, **\-\-pkcs11-module**, **\-\-cert**, and
 optionally **\-\-pkcs11-keyid**.  PKCS#11 token support is unavailable when
 fsverity-utils was built with BoringSSL rather than OpenSSL.
+
+**fsverity sign** should only be used if you need compatibility with fs-verity
+built-in signatures.  It is not the only way to do signatures with fs-verity.
+For more information, see the fsverity-utils README.
 
 Options accepted by **fsverity sign**:
 
