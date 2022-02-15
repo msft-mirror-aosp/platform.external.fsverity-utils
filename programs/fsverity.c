@@ -56,12 +56,13 @@ static const struct fsverity_command {
 	}, {
 		.name = "sign",
 		.func = fsverity_cmd_sign,
-		.short_desc = "Sign a file for fs-verity",
+		.short_desc = "Sign a file for fs-verity built-in signature verification",
 		.usage_str =
-"    fsverity sign FILE OUT_SIGFILE --key=KEYFILE\n"
+"    fsverity sign FILE OUT_SIGFILE\n"
+"               [--key=KEYFILE] [--cert=CERTFILE] [--pkcs11-engine=SOFILE]\n"
+"               [--pkcs11-module=SOFILE] [--pkcs11-keyid=KEYID]\n"
 "               [--hash-alg=HASH_ALG] [--block-size=BLOCK_SIZE] [--salt=SALT]\n"
 "               [--out-merkle-tree=FILE] [--out-descriptor=FILE]\n"
-"               [--cert=CERTFILE]\n"
 	}
 };
 

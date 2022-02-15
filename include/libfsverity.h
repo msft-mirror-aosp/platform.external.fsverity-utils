@@ -22,7 +22,7 @@ extern "C" {
 #include <stdint.h>
 
 #define FSVERITY_UTILS_MAJOR_VERSION	1
-#define FSVERITY_UTILS_MINOR_VERSION	4
+#define FSVERITY_UTILS_MINOR_VERSION	5
 
 #define FS_VERITY_HASH_ALG_SHA256       1
 #define FS_VERITY_HASH_ALG_SHA512       2
@@ -81,11 +81,44 @@ struct libfsverity_digest {
 	uint8_t digest[];		/* the actual digest */
 };
 
+/**
+ * struct libfsverity_signature_params - certificate and private key information
+ *
+ * Zero this, then set @certfile.  Then, to specify the private key by key file,
+ * set @keyfile.  Alternatively, to specify the private key by PKCS#11 token,
+ * set @pkcs11_engine, @pkcs11_module, and optionally @pkcs11_keyid.
+ *
+ * Support for PKCS#11 tokens is unavailable when libfsverity was linked to
+ * BoringSSL rather than OpenSSL.
+ */
 struct libfsverity_signature_params {
-	const char *keyfile;		/* path to key file (PEM format) */
-	const char *certfile;		/* path to certificate (PEM format) */
-	uint64_t reserved1[8];		/* must be 0 */
-	uintptr_t reserved2[8];		/* must be 0 */
+
+	/** @keyfile: the path to the key file in PEM format, when applicable */
+	const char *keyfile;
+
+	/** @certfile: the path to the certificate file in PEM format */
+	const char *certfile;
+
+	/** @reserved1: must be 0 */
+	uint64_t reserved1[8];
+
+	/**
+	 * @pkcs11_engine: the path to the PKCS#11 engine .so file, when
+	 * applicable
+	 */
+	const char *pkcs11_engine;
+
+	/**
+	 * @pkcs11_module: the path to the PKCS#11 module .so file, when
+	 * applicable
+	 */
+	const char *pkcs11_module;
+
+	/** @pkcs11_keyid: the PKCS#11 key identifier, when applicable */
+	const char *pkcs11_keyid;
+
+	/** @reserved2: must be 0 */
+	uintptr_t reserved2[5];
 };
 
 struct libfsverity_metadata_callbacks {
@@ -153,16 +186,15 @@ libfsverity_compute_digest(void *fd, libfsverity_read_fn_t read_fn,
 			   struct libfsverity_digest **digest_ret);
 
 /**
- * libfsverity_sign_digest() - Sign previously computed digest of a file
- *          This signature is used by the filesystem to validate the signed file
- *          digest against a public key loaded into the .fs-verity kernel
- *          keyring, when CONFIG_FS_VERITY_BUILTIN_SIGNATURES is enabled. The
- *          signature is formatted as PKCS#7 stored in DER format. See
- *          Documentation/filesystems/fsverity.rst in the kernel source tree for
- *          further details.
+ * libfsverity_sign_digest() - Sign a file for built-in signature verification
+ *	    Sign a file digest in a way that is compatible with the Linux
+ *	    kernel's fs-verity built-in signature verification support.  The
+ *	    resulting signature will be a PKCS#7 message in DER format.  Note
+ *	    that this is not the only way to do signatures with fs-verity.  For
+ *	    more details, refer to the fsverity-utils README and to
+ *	    Documentation/filesystems/fsverity.rst in the kernel source tree.
  * @digest: pointer to previously computed digest
- * @sig_params: struct libfsverity_signature_params providing filenames of
- *          the keyfile and certificate file. Reserved fields must be zero.
+ * @sig_params: pointer to the certificate and private key information
  * @sig_ret: Pointer to pointer for signed digest
  * @sig_size_ret: Pointer to size of signed return digest
  *
