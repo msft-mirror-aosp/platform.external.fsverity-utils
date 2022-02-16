@@ -58,10 +58,13 @@ void *libfsverity_zalloc(size_t size);
 void *libfsverity_memdup(const void *mem, size_t size);
 
 __cold void
-libfsverity_do_error_msg(const char *format, va_list va);
+libfsverity_do_error_msg(const char *format, va_list va, int err);
 
 __printf(1, 2) __cold void
 libfsverity_error_msg(const char *format, ...);
+
+__printf(1, 2) __cold void
+libfsverity_error_msg_errno(const char *format, ...);
 
 __cold void
 libfsverity_warn_on(const char *condition, const char *file, int line);
