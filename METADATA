@@ -5,12 +5,12 @@ third_party {
     type: GIT
     value: "https://git.kernel.org/pub/scm/linux/kernel/git/ebiggers/fsverity-utils.git"
   }
-  version: "4258209301d54512956d536149b0eef0c695cfe6"
-  # would be NOTICE save for common/fsverity_uapi.h
+  version: "20e87c13075a8e5660a8d69fd6c93d4f7c5f01a5"
+  license_note: "would be NOTICE save for common/fsverity_uapi.h"
   license_type: RESTRICTED
   last_upgrade_date {
-    year: 2021
-    month: 12
-    day: 20
+    year: 2022
+    month: 2
+    day: 7
   }
 }
