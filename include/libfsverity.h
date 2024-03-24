@@ -13,16 +13,16 @@
 #ifndef LIBFSVERITY_H
 #define LIBFSVERITY_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define FSVERITY_UTILS_MAJOR_VERSION	1
-#define FSVERITY_UTILS_MINOR_VERSION	5
+#define FSVERITY_UTILS_MINOR_VERSION	6
 
 #define FS_VERITY_HASH_ALG_SHA256       1
 #define FS_VERITY_HASH_ALG_SHA512       2

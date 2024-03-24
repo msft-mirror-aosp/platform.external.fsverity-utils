@@ -6,63 +6,63 @@
 # https://opensource.org/licenses/MIT.
 
 name: CI
-on: [pull_request]
+on: [push]
 
 jobs:
   static-linking-test:
     name: Test building static library
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - run: scripts/run-tests.sh static_linking
 
   dynamic-linking-test:
     name: Test building dynamic library
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - run: scripts/run-tests.sh dynamic_linking
 
   cplusplus-test:
     name: Test using library from C++ program
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - run: scripts/run-tests.sh cplusplus
 
   uninstall-test:
     name: Test uninstalling
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - run: scripts/run-tests.sh uninstall
 
   dash-test:
     name: Test building using the dash shell
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - run: scripts/run-tests.sh dash
 
   license-test:
     name: Test for correct license info
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - run: scripts/run-tests.sh license
 
   gcc-test:
     name: Test with gcc
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - run: scripts/run-tests.sh gcc
 
   clang-test:
     name: Test with clang
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -73,7 +73,7 @@ jobs:
     name: Test building 32-bit binaries
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo dpkg --add-architecture i386
@@ -85,18 +85,20 @@ jobs:
     name: Test with sanitizers enabled
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y clang llvm
+    - name: Work around https://github.com/actions/runner-images/issues/9491
+      run: sudo sysctl vm.mmap_rnd_bits=28
     - run: scripts/run-tests.sh sanitizers
 
   valgrind-test:
     name: Test with valgrind enabled
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -107,9 +109,9 @@ jobs:
     name: Test with BoringSSL
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Cache BoringSSL build
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         key: boringssl
         path: boringssl
@@ -120,7 +122,7 @@ jobs:
     name: Test with unsigned/signed char
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - run: scripts/run-tests.sh unsigned_char signed_char
 
   # FIXME: need a Windows build of libcrypto for this to work
@@ -128,7 +130,7 @@ jobs:
     #name: Windows build tests
     #runs-on: ubuntu-latest
     #steps:
-    #- uses: actions/checkout@v2
+    #- uses: actions/checkout@v4
     #- name: Install dependencies
       #run: |
         #sudo apt-get update
@@ -139,7 +141,7 @@ jobs:
     name: Run sparse
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -150,7 +152,7 @@ jobs:
     name: Run clang static analyzer
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -161,7 +163,7 @@ jobs:
     name: Run shellcheck
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         sudo apt-get update

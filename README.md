@@ -9,12 +9,8 @@ files, using a hidden Merkle tree (hash tree) associated with the
 file.  It is similar to dm-verity, but implemented at the file level
 rather than at the block device level.  See the [kernel
 documentation](https://www.kernel.org/doc/html/latest/filesystems/fsverity.html)
-for more information about fs-verity.
-
-fs-verity is supported by the ext4 and f2fs filesystems in Linux v5.4
-and later when configured with `CONFIG_FS_VERITY=y` and when the
-`verity` filesystem feature flag has been enabled.  Other filesystems
-might add support for fs-verity in the future.
+for more information about fs-verity, including which filesystems
+support it.
 
 fsverity-utils currently contains just one program, `fsverity`.  The
 `fsverity` program allows you to set up fs-verity protected files.
@@ -29,7 +25,6 @@ example, on Debian-based systems, run:
 
 ```bash
     sudo apt-get install libssl-dev
-    sudo apt-get install pandoc  # optional
 ```
 
 OpenSSL must be version 1.0.0 or later.  This is the only runtime dependency.
@@ -39,16 +34,13 @@ Then, to build and install fsverity-utils:
 ```bash
     make
     sudo make install
-    sudo make install-man  # optional
 ```
 
 By default, the following targets are built and installed: the program
-`fsverity`, the static library `libfsverity.a`, and the shared library
-`libfsverity.so`.  You can also run `make check` to build and run the
-tests, or `make help` to display all available build targets.
-
-`make install-man` installs the `fsverity.1` manual page.  This step requires
-that `pandoc` be installed.
+`fsverity`, the static library `libfsverity.a`, the shared library
+`libfsverity.so`, and the manual page `fsverity.1`.  You can also run
+`make check` to build and run the tests, or `make help` to display all
+available build targets.
 
 By default, `fsverity` is statically linked to `libfsverity`.  You can
 use `make USE_SHARED_LIB=1` to use dynamic linking instead.
@@ -100,6 +92,13 @@ get any authenticity protection (as opposed to just integrity
 protection), the output of `fsverity measure` needs to be compared
 against a trusted value.
 
+### With IMA
+
+Since Linux v5.19, the kernel's IMA (Integrity Measurement
+Architecture) subsystem supports using fs-verity file digests in lieu
+of traditional file digests.  This must be configured in the IMA
+policy.  For more information, see the IMA documentation.
+
 ### Using builtin signatures
 
 First, note that fs-verity is essentially just a way of hashing a
@@ -107,7 +106,7 @@ file; it doesn't mandate a specific way of handling signatures.
 There are several possible ways that signatures could be handled:
 
 * Do it entirely in userspace
-* Use IMA appraisal (work-in-progress)
+* Use IMA appraisal
 * Use fs-verity built-in signatures
 
 Any such solution needs two parts: (a) a policy that determines which
@@ -170,23 +169,19 @@ That being said, here are some examples of using built-in signatures:
     fsverity digest file --compact --for-builtin-sig | tr -d '\n' | xxd -p -r | openssl smime -sign -in /dev/stdin ...
 ```
 
-### With IMA
-
-IMA support for fs-verity is planned.
-
 ## Notices
 
 fsverity-utils is provided under the terms of the MIT license.  A copy
 of this license can be found in the file named [LICENSE](LICENSE).
 
-Send questions and bug reports to linux-fscrypt@vger.kernel.org.
+Send questions and bug reports to fsverity@lists.linux.dev.
 
 Signed release tarballs for fsverity-utils can be found on
 [kernel.org](https://kernel.org/pub/linux/kernel/people/ebiggers/fsverity-utils/).
 
 ## Contributing
 
-Send patches to linux-fscrypt@vger.kernel.org with the additional tag
+Send patches to fsverity@lists.linux.dev with the additional tag
 `fsverity-utils` in the subject, i.e. `[fsverity-utils PATCH]`.
 Patches should follow the Linux kernel's coding style.  A
 `.clang-format` file is provided to approximate this coding style;
